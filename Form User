@@ -1,0 +1,33 @@
+Public Class Form_user
+    Dim SQL As String
+    Dim proses As New claskoneksi
+    Dim tb_user As DataTable
+    Sub data_record()
+        tb_user = proses.ExecuteQuery("select * from tb_user")
+        dguser.DataSource = tb_user
+    End Sub
+    Sub bersih()
+        txtusername.Text = ""
+        txtpassword.Text = ""
+        txtnama.Text = ""
+        txtusername.Focus()
+    End Sub
+    Private Sub btnsimpan_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnsimpan.Click
+        SQL = "Insert Into tb_user Values ('" & txtusername.Text & "','" & txtpassword.Text & "','" & txtnama.Text & "', '" & cmblevel.Text & "')"
+        proses.ExecuteNonQuery(SQL)
+        MessageBox.Show("Siiiip...!!", "Simpan Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        data_record()
+        Call bersih()
+       
+    End Sub
+
+    Private Sub Form_user_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
+        data_record()
+        Call bersih()
+    End Sub
+
+    Private Sub btnubah_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnubah.Click
+
+    End Sub
+End Class
+
