@@ -1,0 +1,92 @@
+Public Class Form_barang
+    Dim SQL As String
+    Dim proses As New claskoneksi
+    Dim tb_barang As DataTable
+    Sub data_record()
+        tb_barang = proses.ExecuteQuery("select * from tb_barang")
+        dgbarang.DataSource = tb_barang
+    End Sub
+    Sub bersih()
+        txtidbarang.Text = ""
+        txtnamabarang.Text = ""
+        txtharga.Text = ""
+        txtstock.Text = ""
+        txtidbarang.Focus()
+    End Sub
+    Private Sub Form_barang_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
+        data_record()
+        dgbarang.AutoResizeColumns()
+    End Sub
+
+    Private Sub btnsimpan_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnsimpan.Click
+        If txtidbarang.Text = "" Or txtnamabarang.Text = "" Or txtharga.Text = "" Or txtstock.Text = "" Then
+            MsgBox("Data tidak boleh kosong", MsgBoxStyle.Critical, Title:="Error")
+        Else
+            tb_barang = proses.ExecuteQuery("Select * From tb_barang where id_barang = '" & txtidbarang.Text & "'")
+            If tb_barang.Rows.Count = 0 Then
+                SQL = "Insert Into tb_barang Values ('" & txtidbarang.Text & "','" & txtnamabarang.Text & "','" & txtharga.Text & "','" & txtstock.Text & "')"
+                proses.ExecuteNonQuery(SQL)
+                MessageBox.Show("Anda yakin data mau disimpan...!!", "Simpan Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Else
+                MsgBox("nip " & txtidbarang.Text & "sudah ada ", MsgBoxStyle.Critical, Title:="Error")
+            End If
+        End If
+        data_record()
+        Call bersih()
+    End Sub
+
+    Private Sub btnbatal_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnbatal.Click
+        Call bersih()
+    End Sub
+
+    Private Sub btnubah_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnubah.Click
+        SQL = "Update tb_barang set namabarang = '" & txtnamabarang.Text & "'," & FormatCurrency(txtharga.Text) & "," & Convert.ToInt32(txtstock.Text) & " where idbarang ='" & txtidbarang.Text & "'"
+        proses.ExecuteNonQuery(SQL)
+        MessageBox.Show("Data sudah diperbaiki...!!", "Perubahan Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        data_record()
+        Call bersih()
+    End Sub
+
+    Private Sub dgbarang_CellDoubleClick(ByVal sender As System.Object, ByVal e As System.Windows.Forms.DataGridViewCellEventArgs) Handles dgbarang.CellDoubleClick
+        txtidbarang.Text = dgbarang.SelectedCells(0).Value
+        txtnamabarang.Text = dgbarang.SelectedCells(1).Value
+        txtharga.Text = Convert.ToDecimal(dgbarang.SelectedCells(2).Value)
+        txtstock.Text = dgbarang.SelectedCells(3).Value
+
+    End Sub
+
+    Private Sub btnhapus_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnhapus.Click
+        SQL = "delete from tb_barang where idbarang='" & txtidbarang.Text & "'"
+        proses.ExecuteNonQuery(SQL)
+        MessageBox.Show("Data akan dihapus..!!", "Hapus Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        data_record()
+        Call bersih()
+    End Sub
+
+    Private Sub dgbarang_CellContentClick(ByVal sender As System.Object, ByVal e As System.Windows.Forms.DataGridViewCellEventArgs) Handles dgbarang.CellContentClick
+
+    End Sub
+
+    Private Sub txtkey_TextChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles txtkey.TextChanged
+        If rdid.Checked = True Then
+            tb_barang = proses.ExecuteQuery("Select * From tb_barang Where idbarang Like  '%" & txtkey.Text & "%'")
+            If tb_barang.Rows.Count = 0 Then
+                dgbarang.DataSource = tb_barang
+                txtkey.Focus()
+            Else
+                dgbarang.DataSource = tb_barang
+            End If
+
+        ElseIf rbnama.Checked = True Then
+            tb_barang = proses.ExecuteQuery("Select * From tb_barang Where namabarang Like  '%" & txtkey.Text & "%'")
+            If tb_barang.Rows.Count = 0 Then
+                dgbarang.DataSource = tb_barang
+                txtkey.Focus()
+            Else
+                dgbarang.DataSource = tb_barang
+            End If
+
+        End If
+
+    End Sub
+End Class
