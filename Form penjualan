@@ -1,0 +1,194 @@
+Public Class Form_Penjualan
+    Dim SQL As String
+    Dim proses As New claskoneksi
+    Dim tb_detailtransaksi As DataTable
+    Dim tb_barang As DataTable
+    Sub kode_otomatis()
+        tb_detailtransaksi = proses.ExecuteQuery("Select * From tb_transaksi order by idtransaksi desc")
+        If tb_detailtransaksi.Rows.Count = 0 Then
+            txtfaktur.Text = "F-001"
+        Else
+            With tb_detailtransaksi.Rows(0)
+                txtfaktur.Text = .Item("idtransaksi")
+            End With
+            txtfaktur.Text = Val(Microsoft.VisualBasic.Mid(txtfaktur.Text, 4, 3)) + 1
+            If Len(txtfaktur.Text) = 1 Then
+                txtfaktur.Text = "F-00" & txtfaktur.Text & ""
+            ElseIf Len(txtfaktur.Text) = 2 Then
+                txtfaktur.Text = "F-0" & txtfaktur.Text & ""
+            ElseIf Len(txtfaktur.Text) = 3 Then
+                txtfaktur.Text = "F-" & txtfaktur.Text & ""
+            End If
+        End If
+    End Sub
+    Private Sub get_total()
+        If Dgpenjualan.RowCount <> 0 Then
+            Dim i As Integer
+            Dim total As Integer
+            For i = 0 To Dgpenjualan.RowCount - 1
+                If (Dgpenjualan.Rows(i).Cells(0).Value.ToString <> "") Then
+                    total += Val(Dgpenjualan.Rows(i).Cells(6).Value.ToString)
+                End If
+            Next
+            txttotal.Text = total
+        Else
+            txttotal.Text = "0"
+        End If
+
+        txtbayar.Enabled = True
+    End Sub
+
+    Private Sub Form_Penjualan_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
+        Luser.Text = Nc_nama_karyawan
+        Call bersih()
+
+        Call kode_otomatis()
+        Dgpenjualan.AutoResizeColumns()
+    End Sub
+    Private Sub bersih()
+
+        txtidbarang.Text = ""
+        txtnamabarang.Text = ""
+        txthargaa.Text = ""
+        txtjumlah.Text = ""
+        txtsubtotal.Text = ""
+        txttotal.Text = ""
+        txtbayar.Text = ""
+        txtkembali.Text = ""
+    End Sub
+    Private Sub Button6_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles bcari.Click
+        Formcaribarang.ShowDialog()
+    End Sub
+
+    Private Sub txtjumlah_KeyPress(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles txtjumlah.KeyPress
+        txtsubtotal.Text = Val(txthargaa.Text) * Val(txtjumlah.Text)
+    End Sub
+
+    Private Sub Button5_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Badditem.Click
+        If txtsubtotal.Text = "" Then
+            MsgBox("Sub Total tidak Boleh Kosong !", MsgBoxStyle.Critical, "Error")
+            txtjumlah.Focus()
+            Return
+        End If
+        If txtidbarang.Text = "" Then
+            MsgBox("Tidak ada barang yang dibeli", MsgBoxStyle.Critical, "Error")
+            bcari.Focus()
+            Return
+        End If
+        If txtjumlah.Text = "" Then
+            MsgBox("Silahkan isi Jumlah Beli", MsgBoxStyle.Critical, "Error")
+            txtjumlah.Focus()
+            Return
+        End If
+        If txtidbarang.Text = "0" Then
+            MsgBox("jumlah beli minimal 1", MsgBoxStyle.Critical, "Error")
+            bcari.Focus()
+            Return
+        End If
+
+        If Dgpenjualan.RowCount <> 0 Then
+            Dim i As Integer
+            For i = 0 To Dgpenjualan.RowCount - 1
+                If (txtidbarang.Text = Dgpenjualan.Rows(i).Cells(0).Value.ToString) Then
+                    MsgBox("idbarang " & txtidbarang.Text & " sudah ada ", MsgBoxStyle.Critical, "Error")
+                    Return
+                End If
+            Next
+        End If
+        tb_barang = proses.ExecuteQuery("select stok from tb_barang where idbarang = '" & txtidbarang.Text & "' ")
+        Dim stok As Integer
+        If tb_barang.Rows.Count <> 0 Then
+            stok = Val(tb_barang.Rows(0).Item("stok").ToString)
+            If stok < Val(txtjumlah.Text) Then
+                MsgBox("idBarang " & txtidbarang.Text & " ada " & stok, MsgBoxStyle.Critical, "Stok tidak mencukupi")
+                Return
+            End If
+        Else
+            MsgBox("Data Barang Tidak Valid", MsgBoxStyle.Critical, "Error")
+            Return
+        End If
+
+        Dim row As String() = New String() {txtfaktur.Text, Ltanggal.Text, txtidbarang.Text, txtnamabarang.Text, txthargaa.Text, txtjumlah.Text, txtsubtotal.Text}
+        Dgpenjualan.Rows.Add(row)
+        txtidbarang.Clear()
+        txtnamabarang.Clear()
+        txthargaa.Clear()
+        txtjumlah.Clear()
+        txtsubtotal.Clear()
+        get_total()
+
+        End Sub
+
+    Private Sub Timer1_Tick(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Timer1.Tick
+        Ltanggal.Text = Format(Now, " dd – MM – yyyy")
+    End Sub
+
+    Private Sub Bcetak_Click(ByVal sender As System.Object, ByVal e As System.EventArgs)
+        Formctkstruk.ShowDialog()
+    End Sub
+
+    Private Sub bsimpan_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles bsimpan.Click
+        Dim g As String = Format(Now, "yyyy-MM-dd")
+        If Val(txtbayar.Text) < Val(txttotal.Text) Then
+            MsgBox("Uang Bayar Kurang ", MsgBoxStyle.Critical, "Error")
+            Return
+        Else
+            txtkembali.Text = Val(txtbayar.Text) - Val(txttotal.Text)
+        End If
+        If Dgpenjualan.RowCount < 1 Then
+            MsgBox("Barang yang Dibeli tidak boleh kosong ", MsgBoxStyle.Critical, "Error")
+            Return
+        End If
+        If txtbayar.Text = 0 Then
+            MsgBox("Silakan bayar terlebih dahulu", MsgBoxStyle.Critical, "Error")
+            Return
+        End If
+
+        Try
+            SQL = "insert into tb_transaksi values('" & txtfaktur.Text & "','" & g.ToString & "','" & txttotal.Text & "', '" & txtbayar.Text & "', '" & txtkembali.Text & "','" & Luser.Text & "')"
+            proses.ExecuteNonQuery(SQL)
+            
+            Dim i As Integer
+            For i = 0 To Dgpenjualan.RowCount - 1
+                SQL = "insert into tb_detailtransaksi (idtransaksi,idbarang,jumlah,subtotal) values ('" & txtfaktur.Text & "','" & Dgpenjualan.Rows(i).Cells(2).Value.ToString & "','" & Dgpenjualan.Rows(i).Cells(5).Value.ToString & "','" & Dgpenjualan.Rows(i).Cells(6).Value.ToString & "')"
+                proses.ExecuteNonQuery(SQL)
+
+                SQL = "update tb_barang set stok = stok - " & Val(Dgpenjualan.Rows(i).Cells(5).Value.ToString & " where id_barang = '" & Dgpenjualan.Rows(i).Cells(2).Value.ToString & "' ")
+                proses.ExecuteNonQuery(SQL)
+            Next
+
+            If MessageBox.Show("Transaksi berhasil, ingin cetak ?", "Konfirmasi", MessageBoxButtons.YesNo) = Windows.Forms.DialogResult.Yes Then
+
+                Dim a As String = MessageBox.Show("Apakah anda ingin mencetak transaksi ini?", "Perhatian", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                If a = MsgBoxResult.Yes Then
+                    Formctkstruk.Crstruk1.SetParameterValue("idtransaksi", txtfaktur.Text)
+                    Formctkstruk.ShowDialog()
+                Else
+
+                End If
+            End If
+
+            bersih()
+            kode_otomatis()
+
+        Catch ex As Exception
+            MsgBox(ex.ToString)
+        End Try
+    End Sub
+    Private Sub txtjumlah_TextChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles txtjumlah.TextChanged
+        If Val(txtjumlah.Text) > Val(Tstock.Text) Then
+            MessageBox.Show("Stock barang tidak mencukupi", "perhatian", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Tstock.Text = ""
+            Call bersih()
+
+        End If
+    End Sub
+
+    Private Sub txtbayar_TextChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles txtbayar.TextChanged
+        txtkembali.Text = Val(txtbayar.Text) - Val(txttotal.Text)
+    End Sub
+
+    Private Sub Tstock_TextChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Tstock.TextChanged
+
+    End Sub
+End Class
